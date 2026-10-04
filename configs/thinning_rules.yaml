@@ -1,0 +1,93 @@
+# ==============================================================================
+# SPATIAL TAIL-ADAPTIVE CONFORMAL PREDICTION (STACP)
+# Temporal Thinning & Independence Configuration
+# ==============================================================================
+# WARNING / ACADEMIC INTEGRITY NOTICE:
+# The temporal thinning intervals (Delta_t) defined in this file are ABSOLUTE 
+# PREREQUISITES for the validity of the Hoeffding-Bentkus p-values in Algorithm 2.
+# Modifying these intervals to artificially inflate the validation sample size (n_val) 
+# violates the approximate exchangeability assumption and will catastrophically 
+# inflate the Type-I error rate of the risk certification.
+# THESE PARAMETERS MUST BE FIXED A PRIORI.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. DEFAULT THINNING POLICY
+# ------------------------------------------------------------------------------
+default_policy:
+  # The default decorrelation timescale applied if a variable is not explicitly overridden.
+  # 120 hours (5 days) represents a standard conservative estimate for the passage of 
+  # synoptic-scale transient eddies in the mid-latitudes.
+  stride_hours: 120
+  
+  # Method for selecting the validation field within the thinning window.
+  # "fixed_offset": Strictly selects the i-th field at exactly (i * stride_hours).
+  # "deterministic_random": Selects a random field within each window using a fixed global seed,
+  # ensuring that selected fields are separated by AT LEAST the stride_hours.
+  sampling_method: "fixed_offset"
+  fixed_offset_hours: 0
+
+# ------------------------------------------------------------------------------
+# 2. VARIABLE-SPECIFIC DECORRELATION OVERRIDES
+# Different physical variables possess distinct memory and persistence characteristics.
+# The thinning stride must exceed the characteristic integral timescale (e-folding time) 
+# of the respective variable's autocorrelation function.
+# ------------------------------------------------------------------------------
+variable_overrides:
+  
+  # 500-hPa Geopotential Height (Z500)
+  # Physical Dynamics: Dominated by planetary-scale Rossby waves and atmospheric blocking.
+  # Blocking highs can persist for 1 to 2 weeks, creating profound temporal memory.
+  # Reference: Madden (1976), Dole & Gordon (1983).
+  Z500:
+    stride_hours: 168  # 7 days (Strictly conservative to decouple blocking events)
+    
+  # 2-meter Temperature (T2m)
+  # Physical Dynamics: Driven by synoptic air mass advection and land-atmosphere 
+  # coupling (e.g., soil moisture memory during heatwaves).
+  # While diurnal cycles exist, extreme heatwave anomalies persist over several days.
+  T2m:
+    stride_hours: 120  # 5 days
+    
+  # Total Precipitation (TP) / Extreme Convective Rainfall
+  # Physical Dynamics: Precipitation exhibits much lower temporal autocorrelation 
+  # due to its episodic and highly transient nature. However, the synoptic envelopes 
+  # driving continuous storm tracks still warrant a baseline separation.
+  TP:
+    stride_hours: 72   # 3 days
+    
+  # 10-meter Wind Speed (U10/V10) / Gusts
+  # Physical Dynamics: Wind extremes are highly localized and transient, but cyclonic 
+  # systems driving them persist for a few days across the domain.
+  U10_V10:
+    stride_hours: 72   # 3 days
+
+# ------------------------------------------------------------------------------
+# 3. SEASONAL & CHRONOLOGICAL BOUNDARY HANDLING
+# To ensure the empirical False Negative Rate (FNR) is evaluated on homogeneous 
+# weather regimes, the evaluation is heavily stratified by season.
+# ------------------------------------------------------------------------------
+stratification:
+  # Whether to restart the thinning counter at the beginning of each target season/year.
+  # True: ensures that a sample from Dec 31st (Year 1) does not unnecessarily thin out 
+  # a sample from Jan 1st (Year 2) if they are treated as distinct independent blocks.
+  reset_stride_at_season_boundary: true
+  
+  # Define the core seasons for extreme event certification
+  # Extratropical extremes exhibit vastly different dynamics between summer (e.g., heatwaves) 
+  # and winter (e.g., cold spells, extreme wind storms).
+  seasons:
+    JJA: [6, 7, 8]       # June, July, August (Boreal Summer)
+    DJF: [12, 1, 2]      # December, January, February (Boreal Winter)
+
+# ------------------------------------------------------------------------------
+# 4. CROSS-LEAD-TIME INDEPENDENCE (For Operational Testing)
+# ------------------------------------------------------------------------------
+# When certifying AI models across different forecast lead times (e.g., Day-3 vs Day-7),
+# the target validation dates must also be thinned. A single initialization time producing 
+# forecasts for contiguous days violates independence.
+lead_time_handling:
+  # "independent_targets": Guarantees that the VALIDATION TARGET DATES (not the 
+  # initialization dates) are separated by stride_hours. This is mathematically 
+  # required for testing the true FNR over a climatological period.
+  mode: "independent_targets"

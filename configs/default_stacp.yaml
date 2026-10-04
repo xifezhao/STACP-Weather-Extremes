@@ -1,0 +1,106 @@
+# ==============================================================================
+# SPATIAL TAIL-ADAPTIVE CONFORMAL PREDICTION (STACP)
+# A Priori Global Hyperparameter Configuration
+# ==============================================================================
+# WARNING / ACADEMIC INTEGRITY NOTICE:
+# To preserve the theoretical guarantees of the Learn-then-Test (LTT) certification 
+# (Algorithm 2) and prevent p-value hacking, ALL parameters in this file MUST BE 
+# FIXED prior to any observation of the validation set (D_val). Modifying these 
+# parameters post-hoc based on validation performance invalidates the FWER control 
+# and the Hoeffding-Bentkus finite-sample bounds.
+# ==============================================================================
+
+project_meta:
+  name: "STACP_Weather_Extremes"
+  version: "1.0.0"
+  description: "Global configuration for EVT calibration and Spatial LTT certification"
+  seed: 42  # Global random seed for deterministic reproducibility in synthetic tasks
+
+# ------------------------------------------------------------------------------
+# 1. RISK CONTROL PARAMETERS (Module: LTT Certification)
+# Ref: Section 3.1 & 3.4 of the manuscript
+# ------------------------------------------------------------------------------
+risk_control:
+  # The target tolerance for the expected Conditional False Negative Rate (FNR)
+  # Set to 0.10 (10%) due to the severe constraints on independent sample sizes (n_val).
+  # Setting this too aggressively (e.g., 0.01) mathematically guarantees certification failure.
+  alpha_risk: 0.10  
+  
+  # Nominal significance level for the hypothesis test
+  delta: 0.05       
+  
+  # Bonferroni correction strategy to control Family-Wise Error Rate (FWER)
+  # Options: "none" (marginal guarantee per var/lead time), "global" (joint guarantee)
+  # Paper config: "none" (applied marginally to avoid depleting statistical power)
+  bonferroni_mode: "none"
+  
+  # P-value calculation method for continuous [0,1] bounded losses
+  p_value_bound: "hoeffding_bentkus" 
+
+# ------------------------------------------------------------------------------
+# 2. CANDIDATE SEQUENCE (Beta Grid for Fixed Sequence Testing)
+# Ref: Section 3.3 of the manuscript
+# ------------------------------------------------------------------------------
+candidate_sequence:
+  # The sequence of beta indexing parameters. 
+  # MUST be monotonically descending (from most conservative to most aggressive) 
+  # to satisfy the efficiency assumptions of Fixed Sequence Testing (FST).
+  beta_start: 0.9990
+  beta_end: 0.9000
+  beta_steps: 100
+  scale: "linear"  # Linear spacing between beta_start and beta_end
+
+# ------------------------------------------------------------------------------
+# 3. EXTREME VALUE THEORY (EVT) CALIBRATION PARAMETERS
+# Ref: Section 3.2 (Algorithm 1) of the manuscript
+# ------------------------------------------------------------------------------
+evt_calibration:
+  # Base empirical threshold to define the start of the heavy tail
+  # Defined as the 95th percentile of the strictly positive non-conformity scores (S_j > 0)
+  p_u: 0.95
+  
+  # Minimum number of independent cluster peaks required to fit the GPD
+  # If N_u < N_min, the algorithm strictly falls back to empirical quantiles to prevent 
+  # exploding variance in the Probability Weighted Moments (PWM) estimation.
+  N_min: 50
+  
+  # Parameter constraints for the Generalized Pareto Distribution (GPD) shape parameter (xi)
+  # Prevents mathematically unstable infinite-variance regimes.
+  # If clipping occurs, the scale parameter (sigma) is recalculated to preserve the mean.
+  xi_bounds:
+    min: -0.3   # Allows bounded upper tails (Weibull domain)
+    max: 0.5    # Restricts overly heavy Fréchet tails to ensure finite variance
+  
+  # Gumbel limit tolerance: if |xi| < xi_gumbel_tol, use exponential tail limit
+  xi_gumbel_tol: 1.0e-3
+  
+  # Parameter estimation method
+  # Forced to 'PWM' (Probability Weighted Moments) for small-sample robustness over MLE
+  estimation_method: "PWM"
+
+# ------------------------------------------------------------------------------
+# 4. EXTREME EVENT DEFINITION & MASKING
+# Ref: Section 2.2 of the manuscript
+# ------------------------------------------------------------------------------
+extreme_definition:
+  # Percentile defining a climatological extreme (used to create the boolean mask M_ext)
+  climatological_percentile: 99.0
+  
+  # To account for seasonality, the climatology is calculated over a rolling day-of-year window
+  rolling_window_days: 31
+  
+  # The historical baseline years used to compute the climatology
+  # MUST be strictly disjoint from the AI model training, calibration, and validation periods!
+  baseline_years: [1979, 2015]
+
+# ------------------------------------------------------------------------------
+# 5. NUMERICAL SAFEGUARDS
+# Ref: Section 7 & Algorithm robustness
+# ------------------------------------------------------------------------------
+numerical_safeguards:
+  # Small epsilon to prevent division by zero in score normalization
+  eps_scale: 1.0e-8
+  
+  # Minimum spatial intersection denominator (N_ext) to consider a field "active"
+  # Any field with N_ext <= min_active_grids is discarded to prevent risk dilution
+  min_active_grids: 1 

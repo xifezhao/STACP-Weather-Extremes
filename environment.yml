@@ -1,0 +1,30 @@
+name: stacp-env
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy>=1.24.0
+  - scipy>=1.10.0
+  - pandas>=2.0.0
+  - xarray>=2023.1.0
+  - netcdf4>=1.6.2
+  - dask>=2023.1.0
+  - zarr>=2.14.0
+  - fsspec>=2023.1.0
+  - gcsfs>=2023.1.0
+  - s3fs>=2023.1.0
+  - cartopy>=0.21.0
+  - matplotlib>=3.7.0
+  - seaborn>=0.12.0
+  - cmocean>=3.0.0
+  - pyyaml>=6.0
+  - tqdm>=4.65.0
+  - jupyter
+  - ipykernel
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pip:
+    - weatherbench2

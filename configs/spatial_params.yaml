@@ -1,0 +1,96 @@
+# ==============================================================================
+# SPATIAL TAIL-ADAPTIVE CONFORMAL PREDICTION (STACP)
+# Spatial Topology & Smoothing Configuration
+# ==============================================================================
+# WARNING / ACADEMIC INTEGRITY NOTICE:
+# The spatial operators defined herein are embedded DIRECTLY inside the LTT 
+# certification loop (Algorithm 2). To preserve the monotonic non-decreasing 
+# property of the candidate bounding fields U(X, beta) with respect to beta, 
+# ONLY order-preserving operations (Max-pooling and Convex filtering) are permitted.
+# These parameters MUST remain frozen prior to LTT execution.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. DEFAULT SPATIAL OPERATOR PARAMETERS
+# Applied if a variable does not have specific physical overrides below.
+# Assuming standard ERA5 resolution (0.25 degrees, ~31 km at the equator).
+# ------------------------------------------------------------------------------
+default_topology:
+  
+  # Step 1: Spatial Dilation (Max-Pooling)
+  # Purpose: To guarantee that if an extreme event shifts slightly in space 
+  # due to AI model displacement errors, the bounding polygon expands to cover it.
+  dilation:
+    apply: true
+    kernel_size: 3  # 3x3 grid cells (~90x90 km area)
+    stride: 1       # Stride 1 preserves the original spatial resolution
+    padding: 1      # 'same' padding to maintain grid dimensions
+  
+  # Step 2: Convex Smoothing (Gaussian Filter)
+  # Purpose: To eliminate the "salt-and-pepper" non-physical step-changes 
+  # across adjacent classification bins, ensuring topological field coherence.
+  # Constraint: Weights must be strictly non-negative and sum to 1.
+  smoothing:
+    apply: true
+    method: "gaussian" # Options: "gaussian", "uniform" (average pooling)
+    kernel_size: 5     # 5x5 smoothing window
+    sigma: 1.0         # Standard deviation for the Gaussian kernel
+
+# ------------------------------------------------------------------------------
+# 2. VARIABLE-SPECIFIC PHYSICAL OVERRIDES
+# Different atmospheric variables operate on vastly different physical scales.
+# Synoptic-scale features (Z500) require larger topological envelopes than 
+# surface-level high-impact features (T2m).
+# ------------------------------------------------------------------------------
+variable_overrides:
+  
+  # 500-hPa Geopotential Height (Proxy for atmospheric blocking highs)
+  # Physical characteristic: Large-scale, slowly evolving synoptic systems.
+  # Requires a larger envelope to represent coherent wave structures.
+  Z500:
+    dilation:
+      apply: true
+      kernel_size: 5  # 5x5 grid cells (~150x150 km area)
+      stride: 1
+      padding: 2
+    smoothing:
+      apply: true
+      method: "gaussian"
+      kernel_size: 7  # Broader smoothing for upper-air fields
+      sigma: 1.5
+      
+  # 2-meter Temperature (Proxy for surface heatwaves)
+  # Physical characteristic: Mesoscale to synoptic scale, highly influenced 
+  # by local topography and land-sea masks.
+  # Requires a tighter envelope to prevent washing out localized extremes.
+  T2m:
+    dilation:
+      apply: true
+      kernel_size: 3  # 3x3 grid cells (~90x90 km area)
+      stride: 1
+      padding: 1
+    smoothing:
+      apply: true
+      method: "gaussian"
+      kernel_size: 5  # Tighter smoothing to preserve coastal/orographic gradients
+      sigma: 1.0
+      
+  # 10-meter Wind Speed (Proxy for extreme gusts / cyclones)
+  # Physical characteristic: Highly localized, high-frequency transients.
+  U10_V10:
+    dilation:
+      apply: true
+      kernel_size: 3
+      stride: 1
+      padding: 1
+    smoothing:
+      apply: false    # Smoothing often destroys extreme wind gust peaks; disabled.
+
+# ------------------------------------------------------------------------------
+# 3. BOUNDARY CONDITION HANDLING
+# ------------------------------------------------------------------------------
+boundary_conditions:
+  # Defines how convolutions behave at the edges of the spatial domain
+  # Options: "zeros", "reflect", "replicate", "circular" (for global longitudes)
+  # "circular" is mathematically required if processing full global longitude grids [0, 360)
+  mode: "circular" 
