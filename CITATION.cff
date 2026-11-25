@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+title: "Spatial Tail-Adaptive Conformal Prediction (STACP) for Weather Extremes"
+message: "If you use this software or the archived WeatherBench 2 benchmark results, please cite the accompanying Monthly Weather Review manuscript."
+type: software
+authors:
+  - given-names: Jieqiong
+    family-names: Ding
+  - given-names: Xiaofei
+    family-names: Zhao
+repository-code: "https://github.com/xifezhao/STACP-Weather-Extremes"
+url: "https://github.com/xifezhao/STACP-Weather-Extremes"
+license: MIT
+version: "1.0.0-mwr-submission"
+date-released: "2026-11-25"
+keywords:
+  - conformal risk control
+  - extreme value theory
+  - generalized Pareto distribution
+  - weather extremes
+  - Pangu-Weather
+  - ERA5
+  - WeatherBench 2
+preferred-citation:
+  type: article
+  authors:
+    - given-names: Jieqiong
+      family-names: Ding
+    - given-names: Xiaofei
+      family-names: Zhao
+  title: "Bridging Extreme Value Theory and Machine Learning: A Spatial Conformal Risk Control Framework for Weather Extremes"
+  journal: "Monthly Weather Review"
+  year: 2026
+  status: submitted

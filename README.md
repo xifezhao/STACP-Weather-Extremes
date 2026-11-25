@@ -43,8 +43,14 @@ STACP-Weather-Extremes/
 │   └── run_emos_baseline.py         # Parametric Gaussian EMOS baseline (q90 & q99)
 ├── experiments/                     # Synchronized mirror of stacp_v2/ entry points
 ├── results/
+│   ├── SHA256SUMS.txt               # SHA-256 checksum manifest for all authentic JSONs & canonical figures
 │   ├── v2_authentic/                # Authentic JSON outputs (real_*, synthetic, emos_baseline, case_metrics)
-│   └── figures/                     # Publication-ready vector figures (Fig7, Fig8)
+│   └── figures/                     # Canonical manuscript vector figures (Fig7, Fig8)
+├── tests/
+│   └── test_core.py                 # Unit tests for GPD-PWM, HB p-values, SpatialOp, and FST (CI-verified)
+├── .github/workflows/ci.yml         # Automated pytest + SHA-256 verification workflow
+├── CITATION.cff                     # Machine-readable software & manuscript citation metadata
+├── .gitignore                       # Standard Python, Jupyter, and large-data ignore rules
 ├── notebooks/
 │   ├── Fig2_Tail_Splicing.py        # Tail splicing schematic
 │   ├── Fig3_SampleSize_Bottleneck.py# Hoeffding–Bentkus sample-size ceiling
@@ -64,9 +70,11 @@ STACP-Weather-Extremes/
 
 ## Quickstart & Reproduction
 
-### 1. Environment Setup
+### 1. Environment Setup & Integrity Verification
 ```bash
 pip install -r requirements.txt
+pytest -v tests/test_core.py
+sha256sum -c results/SHA256SUMS.txt   # or: shasum -a 256 -c results/SHA256SUMS.txt
 ```
 
 ### 2. Run Synthetic Monte Carlo Benchmarks
@@ -75,22 +83,29 @@ python stacp_v2/run_synthetic.py
 ```
 Outputs `synthetic.json` (archived in `results/v2_authentic/synthetic.json`).
 
-### 3. Run Real-Data ERA5 / Pangu-Weather Benchmarks
+### 3. Run Real-Data ERA5 / Pangu-Weather & EMOS Benchmarks
+Set `STACP_DATA` to any local storage directory (defaults to `./data/processed`):
 ```bash
+export STACP_DATA=./data/processed
 python stacp_v2/extract_wb2.py
 python stacp_v2/run_real.py
+python stacp_v2/run_emos_baseline.py
 ```
-Outputs the 12 authentic JSON files in `results/v2_authentic/real_{var}_{dom}_{lead}.json`.
+Outputs the 12 authentic JSON files (`results/v2_authentic/real_{var}_{dom}_{lead}.json`) and `emos_baseline.json`.
 
-### 4. Reproduce Authentic Figure 7
+### 4. Reproduce Canonical Manuscript Figures (Fig. 7 & Fig. 8)
+> **Note on Canonical Figures:** In the *Monthly Weather Review* manuscript, Figures 2–6 are rendered natively via TikZ/PGFPlots directly from `results/v2_authentic/*.json`, while Figures 7 and 8 are vector PDFs archived exclusively in `results/figures/` (`Fig7-MultiLead-CrossRegion.pdf` and `Fig8-Synoptic-Case-Map.pdf`).
+
 ```bash
 python notebooks/Fig7_MultiLead_CrossRegion.py
+python notebooks/Fig8_Synoptic_Case_Map.py
 ```
-Generates `results/figures/Fig7-MultiLead-CrossRegion.pdf` directly from `results/v2_authentic/real_*.json`.
 
 ---
 
-## Citation
+## Archival & Citation
+
+This repository includes a machine-readable [`CITATION.cff`](CITATION.cff) file and is tagged as release `v1.0.0-mwr-submission` corresponding to the submitted *Monthly Weather Review* manuscript. Upon manuscript acceptance, a permanent versioned snapshot will be minted with a Zenodo DOI.
 
 ```bibtex
 @article{ding_zhao_2026_stacp,
