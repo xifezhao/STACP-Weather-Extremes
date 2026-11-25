@@ -1,6 +1,6 @@
 """Extract ERA5 / Pangu-Weather / IFS-ENS fields from WeatherBench2 (public GCS).
 
-Output (/content/stacp_data):
+Output directory (configured via STACP_DATA env var, default: <repo>/data/processed):
   era5_{var}.npz   : 00 UTC daily fields 1990-01-01 .. 2022-12-31, lat 25..70N, all lon
   pangu_{var}.npz  : 00 UTC initialisations 2018-2022, leads 72/120/168 h
   ens_{var}.npz    : IFS-ENS 50-member 90th percentile and maximum, 2022 inits every
@@ -14,7 +14,8 @@ import xarray as xr
 import dask
 
 dask.config.set(scheduler="threads", num_workers=32)
-OUT = "/content/stacp_data"
+_DEFAULT_OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "processed")
+OUT = os.environ.get("STACP_DATA", _DEFAULT_OUT)
 os.makedirs(OUT, exist_ok=True)
 G = 9.80665
 SO = {"token": "anon"}
