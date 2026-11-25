@@ -4,7 +4,7 @@ ERA5 (T2m + Z500) and Pangu-Weather 7-day (168-h) forecasts on the 1.5-deg grid.
 Zero synthetic fields or hard-coded metrics: every pixel and metric is computed
 directly from the real WeatherBench 2 archives.
 """
-import json, os, time
+import json, os, sys, time
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -16,6 +16,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if os.path.join(REPO_ROOT, "stacp_v2") not in sys.path:
+    sys.path.insert(0, os.path.join(REPO_ROOT, "stacp_v2"))
 
 from core import BETA_GRID, BinnedFamily, SpatialOp, margins_binned, n_components, spatial_cluster_maxima
 
@@ -77,7 +81,11 @@ s_sep = np.maximum(np.sqrt(np.mean((Y18 - F18) ** 2, axis=0)), 1e-3)
 print("4. Loading 2019 calibration set for exact GPD fit & pointwise q90...", flush=True)
 # Compute 2018 monthly scale & 1990-2017 full-year? Even faster: load exact GPD bin params directly from
 # results/v2_authentic/real_t2m_NA_168.json (already computed from full 2019!) so it matches Table 5 to 1e-6!
-meta = json.loads(open("/content/real_t2m_NA_168.json").read())
+meta_path = os.environ.get(
+    "STACP_REAL_JSON",
+    os.path.join(REPO_ROOT, "results", "v2_authentic", "real_t2m_NA_168.json"),
+)
+meta = json.loads(open(meta_path).read())
 gpd_bins = meta["gpd_bins"]
 q_pointwise = float(meta["q_pointwise"])
 
@@ -254,8 +262,13 @@ leg_handles = [
 ]
 lax.legend(handles=leg_handles, loc="center", ncol=3, fontsize=7.5, frameon=True, edgecolor="0.7")
 
-os.makedirs("/content/stacp_fig8", exist_ok=True)
-fig.savefig("/content/stacp_fig8/Fig8-Synoptic-Case-Map.pdf", bbox_inches="tight")
-with open("/content/stacp_fig8/case_metrics.json", "w") as fh:
+fig_dir = os.environ.get("STACP_FIG_DIR", os.path.join(REPO_ROOT, "results", "figures"))
+res_dir = os.environ.get("STACP_RES_DIR", os.path.join(REPO_ROOT, "results", "v2_authentic"))
+os.makedirs(fig_dir, exist_ok=True)
+os.makedirs(res_dir, exist_ok=True)
+fig_out = os.path.join(fig_dir, "Fig8-Synoptic-Case-Map.pdf")
+json_out = os.path.join(res_dir, "case_metrics.json")
+fig.savefig(fig_out, bbox_inches="tight")
+with open(json_out, "w") as fh:
     json.dump({"peak": peak, "daily": daily_stats}, fh, indent=2)
-print("SAVED /content/stacp_fig8/Fig8-Synoptic-Case-Map.pdf & case_metrics.json", flush=True)
+print(f"SAVED {fig_out} & {json_out}", flush=True)
