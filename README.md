@@ -39,18 +39,20 @@ STACP-Weather-Extremes/
 │   ├── core.py                      # GPD-PWM, SpatialOp (r=1, sigma=1.0), HB p-values, FST
 │   ├── extract_wb2.py               # WeatherBench 2 ERA5 / Pangu-Weather / IFS extraction (1.5°)
 │   ├── run_synthetic.py             # Synthetic AR(1) + symmetric GPD Monte Carlo benchmarks
-│   └── run_real.py                  # Full NA/EU × 72/120/168 h × Z500/T2m evaluation
+│   ├── run_real.py                  # Full NA/EU × 72/120/168 h × Z500/T2m evaluation
+│   └── run_emos_baseline.py         # Parametric Gaussian EMOS baseline (q90 & q99)
 ├── experiments/                     # Synchronized mirror of stacp_v2/ entry points
 ├── results/
-│   ├── v2_authentic/                # Authentic JSON outputs used in Tables 4–7 and Fig. 7
-│   └── figures/                     # Publication-ready vector figures (PDF/PNG)
+│   ├── v2_authentic/                # Authentic JSON outputs (real_*, synthetic, emos_baseline, case_metrics)
+│   └── figures/                     # Publication-ready vector figures (Fig7, Fig8)
 ├── notebooks/
 │   ├── Fig2_Tail_Splicing.py        # Tail splicing schematic
 │   ├── Fig3_SampleSize_Bottleneck.py# Hoeffding–Bentkus sample-size ceiling
 │   ├── Fig4_Degradation_Analysis.py # Autocorrelation & thinning bottleneck
 │   ├── Fig5_FST_pvalue_Trajectory.py# FST p-value trajectory & N_cal certification rate
 │   ├── Fig6_Sharpness_Metrics.py    # Normalized Z500 spatial operator ablation
-│   └── Fig7_MultiLead_CrossRegion.py# Authentic multi-lead (72–168 h) & NA/EU Fig. 7
+│   ├── Fig7_MultiLead_CrossRegion.py# Authentic multi-lead (72–168 h) & NA/EU Fig. 7 (incl. EMOS)
+│   └── Fig8_Synoptic_Case_Map.py    # Authentic Sep 2022 Western NA heat-wave synoptic map (Fig. 8)
 ├── configs/                         # Reference YAML configuration files
 ├── src/                             # Modular reference library
 ├── LICENSE                          # MIT License
